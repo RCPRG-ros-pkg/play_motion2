@@ -22,7 +22,9 @@
 #include "rclcpp_action/create_client.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp/node.hpp"
+#include "rclcpp/wait_for_message.hpp"
 
+#include "std_msgs/msg/string.hpp"
 namespace play_motion2
 {
 using namespace std::chrono_literals;
@@ -156,6 +158,24 @@ void MotionPlanner::check_parameters()
     throw std::runtime_error(what);
   }
   planning_groups_ = planning_groups_it->second.as_string_array();
+
+  // Wait for robot_description and robot_description_semantic to be published
+  // to avoid dying when creating MoveGroupInterface objects after 10 seconds.
+  const auto wait_for_description = [&](const std::string & topic) {
+      std_msgs::msg::String description;
+      const auto subscription = node_->create_subscription<std_msgs::msg::String>(
+        topic, rclcpp::QoS(1).transient_local(),
+        [](const std_msgs::msg::String::SharedPtr) {});
+
+      while (!rclcpp::wait_for_message(
+          description, subscription, move_group_node_->get_node_options().context(), 10s))
+      {
+        RCLCPP_WARN(node_->get_logger(), "Waiting for %s to be published", topic.c_str());
+      }
+    };
+
+  wait_for_description("/robot_description");
+  wait_for_description("/robot_description_semantic");
 
   for (const auto & group : planning_groups_) {
     move_groups_.emplace_back(std::make_shared<MoveGroupInterface>(move_group_node_, group));
