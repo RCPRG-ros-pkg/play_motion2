@@ -2,6 +2,12 @@
 Changelog for package play_motion2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Wait for robot description and semantic when using planning
+* Wait for the executor to be spinning for play_motion2_test
+* Contributors: Noel Jimenez
+
 1.1.2 (2024-07-04)
 ------------------
 * Handle joint state not available in /joint_states topic
