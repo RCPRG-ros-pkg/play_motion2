@@ -2,8 +2,8 @@
 Changelog for package play_motion2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.2.0 (2024-08-09)
+------------------
 * Wait for robot description and semantic when using planning
 * Wait for the executor to be spinning for play_motion2_test
 * Contributors: Noel Jimenez
