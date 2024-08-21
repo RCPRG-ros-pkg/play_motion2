@@ -7,6 +7,8 @@ find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "action/PlayMotion2.action"
+  "msg/Motion.msg"
+  "srv/GetMotionInfo.srv"
   "srv/IsMotionReady.srv"
   "srv/ListMotions.srv"
   DEPENDENCIES builtin_interfaces
