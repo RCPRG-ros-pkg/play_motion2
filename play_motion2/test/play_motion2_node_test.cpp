@@ -287,3 +287,35 @@ TEST_F(PlayMotion2NodeTest, UnusedControllersChangedDuringExecution)
     1s, "controller_2_pose",
     rclcpp_action::ResultCode::SUCCEEDED);
 }
+
+TEST_F(PlayMotion2NodeTest, GetMotionInfoSrvTest)
+{
+  auto get_motion_info_client =
+    client_node_->create_client<GetMotionInfo>("play_motion2/get_motion_info");
+
+  ASSERT_TRUE(get_motion_info_client->wait_for_service(TIMEOUT));
+
+  auto request = std::make_shared<GetMotionInfo::Request>();
+  request->motion_key = "home";
+  auto future_result = get_motion_info_client->async_send_request(request);
+
+  ASSERT_EQ(
+    rclcpp::spin_until_future_complete(
+      client_node_, future_result,
+      TIMEOUT), rclcpp::FutureReturnCode::SUCCESS);
+
+  const auto result = future_result.get();
+
+  ASSERT_EQ(result->motion.key, "home");
+  ASSERT_EQ(result->motion.joints.size(), 2u);
+  ASSERT_EQ(result->motion.joints[0], "joint1");
+  ASSERT_EQ(result->motion.joints[1], "joint2");
+  ASSERT_EQ(result->motion.positions.size(), 2u);
+  ASSERT_EQ(result->motion.positions[0], 0.5);
+  ASSERT_EQ(result->motion.positions[1], 0.5);
+  ASSERT_EQ(result->motion.times_from_start.size(), 1u);
+  ASSERT_EQ(result->motion.times_from_start[0], 0.1);
+  ASSERT_TRUE(result->motion.name.empty());
+  ASSERT_TRUE(result->motion.description.empty());
+  ASSERT_TRUE(result->motion.usage.empty());
+}

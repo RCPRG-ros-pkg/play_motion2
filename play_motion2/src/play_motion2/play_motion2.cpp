@@ -75,6 +75,10 @@ CallbackReturn PlayMotion2::on_activate(const rclcpp_lifecycle::State & /*state*
     "play_motion2/is_motion_ready",
     std::bind(&PlayMotion2::is_motion_ready_callback, this, _1, _2));
 
+  get_motion_info_service_ = create_service<GetMotionInfo>(
+    "play_motion2/get_motion_info",
+    std::bind(&PlayMotion2::get_motion_info_callback, this, _1, _2));
+
   pm2_action_ = rclcpp_action::create_server<Action>(
     shared_from_this(), "play_motion2",
     std::bind(&PlayMotion2::handle_goal, this, _1, _2),
@@ -128,6 +132,25 @@ void PlayMotion2::is_motion_ready_callback(
   // skip_planning argument is set to true to avoid false negatives in case planning is not enabled
   response->is_ready = !is_busy_ &&
     motion_planner_->is_executable(motion_loader_->get_motion_info(request->motion_key), true);
+}
+
+void PlayMotion2::get_motion_info_callback(
+  GetMotionInfo::Request::ConstSharedPtr request,
+  GetMotionInfo::Response::SharedPtr response) const
+{
+  if (!motion_loader_->exists(request->motion_key)) {
+    RCLCPP_ERROR_STREAM(get_logger(), "Motion '" << request->motion_key << "' does not exist");
+    return;
+  }
+
+  const auto motion_info = motion_loader_->get_motion_info(request->motion_key);
+  response->motion.key = motion_info.key;
+  response->motion.name = motion_info.name;
+  response->motion.usage = motion_info.usage;
+  response->motion.description = motion_info.description;
+  response->motion.joints = motion_info.joints;
+  response->motion.positions = motion_info.positions;
+  response->motion.times_from_start = motion_info.times;
 }
 
 rclcpp_action::GoalResponse PlayMotion2::handle_goal(
