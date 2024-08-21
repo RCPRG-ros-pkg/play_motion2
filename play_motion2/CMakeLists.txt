@@ -21,6 +21,11 @@ ament_auto_add_executable(play_motion2_node
   src/play_motion2_main.cpp
 )
 
+# run_motion
+ament_auto_add_executable(run_motion
+  src/run_motion.cpp
+)
+
 if(BUILD_TESTING)
   ament_auto_find_test_dependencies()
   ament_lint_auto_find_test_dependencies()
