@@ -230,7 +230,9 @@ bool MotionLoader::add_motion(const MotionMsg & motion_msg, const bool overwrite
   motion_info.usage = motion_msg.usage;
 
   // Add motion info and key
-  motion_keys_.emplace_back(motion_info.key);
+  if (!exists(motion_info.key)) {
+    motion_keys_.emplace_back(motion_info.key);
+  }
   motions_[motion_info.key] = motion_info;
 
   return true;
