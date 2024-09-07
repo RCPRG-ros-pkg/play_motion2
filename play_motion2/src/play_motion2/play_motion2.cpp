@@ -142,7 +142,7 @@ void PlayMotion2::is_motion_ready_callback(
   IsMotionReady::Response::SharedPtr response)
 {
   // skip_planning argument is set to true to avoid false negatives in case planning is not enabled
-  response->is_ready = !is_busy_ &&
+  response->is_ready = !is_busy_ && motion_loader_->exists(request->motion_key) &&
     motion_planner_->is_executable(motion_loader_->get_motion_info(request->motion_key), true);
 }
 
