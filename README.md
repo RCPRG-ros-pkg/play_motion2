@@ -91,7 +91,17 @@ Launcher parameters:
 - `use_sim_time`: `true` or `false`. Decide whether to use simulation time or not.
 
 Once started, motion goals can be sent from another terminal:
+```bash
+ros2 run play_motion2 run_motion <motion_name> [<skip_planning> <timeout>]
+```
+where
+```
+<motion_name>    - Name of the motion to run.
+<skip_planning>  - Whether to skip planning for approaching to the first position or not. (default: false)
+<timeout>        - Timeout (in seconds) to wait for the motion. (default: 120)
+```
 
+or calling directly the action with the `ros2cli`:
 ```bash
 ros2 action send_goal /play_motion2 play_motion2_msgs/action/PlayMotion2 "{motion_name: '', skip_planning: false}"
 ```
