@@ -185,12 +185,15 @@ rclcpp_action::GoalResponse PlayMotion2::handle_goal(
 {
   RCLCPP_INFO_STREAM(get_logger(), "Received goal request: motion '" << goal->motion_name << "'");
 
-  if (is_busy_ || !motion_loader_->exists(goal->motion_name) ||
+  const bool exists = motion_loader_->exists(goal->motion_name);
+  if (is_busy_ || !exists ||
     !motion_planner_->is_executable(
       motion_loader_->get_motion_info(goal->motion_name),
       goal->skip_planning))
   {
     RCLCPP_ERROR_EXPRESSION(get_logger(), is_busy_, "PlayMotion2 is busy");
+    RCLCPP_ERROR_STREAM_EXPRESSION(
+      get_logger(), !exists, "Motion '" << goal->motion_name << "' does not exist");
     RCLCPP_ERROR_STREAM(get_logger(), "Motion '" << goal->motion_name << "' cannot be performed");
     return rclcpp_action::GoalResponse::REJECT;
   }

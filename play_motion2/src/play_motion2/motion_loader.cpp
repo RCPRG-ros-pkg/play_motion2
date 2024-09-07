@@ -140,10 +140,6 @@ bool MotionLoader::exists(const std::string & motion_key) const
   const bool exists =
     std::find(motion_keys_.begin(), motion_keys_.end(), motion_key) != motion_keys_.end();
 
-  RCLCPP_ERROR_STREAM_EXPRESSION(
-    logger_, !exists,
-    "Motion '" << motion_key << "' is not known");
-
   return exists;
 }
 
@@ -241,6 +237,7 @@ bool MotionLoader::add_motion(const MotionMsg & motion_msg, const bool overwrite
 bool MotionLoader::remove_motion(const std::string & motion_key)
 {
   if (!exists(motion_key)) {
+    RCLCPP_ERROR_STREAM(logger_, "Motion '" << motion_key << "' does not exist.");
     return false;
   }
 
