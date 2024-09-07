@@ -239,7 +239,7 @@ MotionInfo PlayMotion2Client::get_motion_info(const std::string & motion_key)
   return motion_info;
 }
 
-bool PlayMotion2Client::add_motion(const MotionMsg & motion_msg)
+bool PlayMotion2Client::add_motion(const MotionMsg & motion_msg, const bool overwrite)
 {
   if (!add_motion_client_->wait_for_service(kTimeout)) {
     RCLCPP_ERROR(this->get_logger(), "Timeout while waiting for AddMotion service");
@@ -248,6 +248,7 @@ bool PlayMotion2Client::add_motion(const MotionMsg & motion_msg)
 
   auto request = std::make_shared<AddMotion::Request>();
   request->motion = motion_msg;
+  request->overwrite = overwrite;
   auto future = add_motion_client_->async_send_request(request);
 
   if (rclcpp::spin_until_future_complete(shared_from_this(), future, kTimeout) !=

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <string>
+#include <vector>
 
 #include "play_motion2/types.hpp"
 
@@ -64,7 +65,7 @@ public:
   bool is_motion_ready(const std::string & motion_key);
   MotionInfo get_motion_info(const std::string & motion_key);
 
-  bool add_motion(const MotionMsg & motion_msg);
+  bool add_motion(const MotionMsg & motion_msg, const bool overwrite);
   bool remove_motion(const std::string & motion_key);
 
 private:
