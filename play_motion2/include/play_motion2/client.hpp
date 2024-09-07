@@ -14,7 +14,15 @@
 
 #include <string>
 
+#include "play_motion2/types.hpp"
+
 #include "play_motion2_msgs/action/play_motion2.hpp"
+#include "play_motion2_msgs/msg/motion.hpp"
+#include "play_motion2_msgs/srv/add_motion.hpp"
+#include "play_motion2_msgs/srv/get_motion_info.hpp"
+#include "play_motion2_msgs/srv/is_motion_ready.hpp"
+#include "play_motion2_msgs/srv/list_motions.hpp"
+#include "play_motion2_msgs/srv/remove_motion.hpp"
 
 #include "rclcpp_action/client.hpp"
 #include "rclcpp/node.hpp"
@@ -27,6 +35,14 @@ namespace play_motion2
 class PlayMotion2Client : public rclcpp::Node
 {
   using PlayMotion2 = play_motion2_msgs::action::PlayMotion2;
+  using MotionMsg = play_motion2_msgs::msg::Motion;
+
+  using GetMotionInfo = play_motion2_msgs::srv::GetMotionInfo;
+  using IsMotionReady = play_motion2_msgs::srv::IsMotionReady;
+  using ListMotions = play_motion2_msgs::srv::ListMotions;
+
+  using AddMotion = play_motion2_msgs::srv::AddMotion;
+  using RemoveMotion = play_motion2_msgs::srv::RemoveMotion;
 
 public:
   explicit PlayMotion2Client(const std::string & name = "play_motion2_client");
@@ -37,8 +53,22 @@ public:
     const bool skip_planning,
     const std::chrono::seconds & motion_timeout = std::chrono::seconds(120));
 
+  std::vector<std::string> list_motions();
+  bool is_motion_ready(const std::string & motion_key);
+  MotionInfo get_motion_info(const std::string & motion_key);
+
+  bool add_motion(const MotionMsg & motion_msg);
+  bool remove_motion(const std::string & motion_key);
+
 private:
   rclcpp_action::Client<PlayMotion2>::SharedPtr play_motion2_client_;
+
+  rclcpp::Client<GetMotionInfo>::SharedPtr get_motion_info_client_;
+  rclcpp::Client<IsMotionReady>::SharedPtr is_motion_ready_client_;
+  rclcpp::Client<ListMotions>::SharedPtr list_motions_client_;
+
+  rclcpp::Client<AddMotion>::SharedPtr add_motion_client_;
+  rclcpp::Client<RemoveMotion>::SharedPtr remove_motion_client_;
 };
 }  // namespace play_motion2
 
