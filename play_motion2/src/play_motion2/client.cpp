@@ -25,10 +25,13 @@
 namespace play_motion2
 {
 using namespace std::chrono_literals;
+using std::placeholders::_1;
 const auto kTimeout = 10s;
 
 PlayMotion2Client::PlayMotion2Client(const std::string & name)
 : Node(name)
+  , running_motion_(false)
+  , motion_succeeded_(false)
 {
   play_motion2_client_ = rclcpp_action::create_client<PlayMotion2>(this, "/play_motion2");
 
@@ -51,34 +54,67 @@ PlayMotion2Client::~PlayMotion2Client()
   remove_motion_client_.reset();
 }
 
-bool PlayMotion2Client::run_motion(
-  const std::string & motion_name,
-  const bool skip_planning,
-  const std::chrono::seconds & motion_timeout)
+const rclcpp_action::ClientGoalHandle<play_motion2_msgs::action::PlayMotion2>::SharedPtr
+PlayMotion2Client::send_goal(const std::string & motion_name, const bool skip_planning)
 {
   if (!play_motion2_client_->wait_for_action_server(kTimeout)) {
     RCLCPP_ERROR(this->get_logger(), "Timeout while waiting for PlayMotion2 server");
-    return false;
+    return nullptr;
   }
 
   auto goal = PlayMotion2::Goal();
   goal.motion_name = motion_name;
   goal.skip_planning = skip_planning;
-  auto goal_future = play_motion2_client_->async_send_goal(goal);
+
+  auto send_goal_options = rclcpp_action::Client<PlayMotion2>::SendGoalOptions();
+  send_goal_options.result_callback = std::bind(&PlayMotion2Client::result_callback, this, _1);
+
+  auto goal_future = play_motion2_client_->async_send_goal(goal, send_goal_options);
 
   if (rclcpp::spin_until_future_complete(shared_from_this(), goal_future, kTimeout) !=
     rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_ERROR(this->get_logger(), "Cannot send goal to PlayMotion2 server");
-    return false;
+    return nullptr;
   }
 
   const auto goal_handle = goal_future.get();
 
   if (!goal_handle) {
     RCLCPP_ERROR(this->get_logger(), "Goal rejected by PlayMotion2 server");
+    return nullptr;
+  }
+
+  return goal_handle;
+}
+
+void PlayMotion2Client::result_callback(
+  const rclcpp_action::ClientGoalHandle<PlayMotion2>::WrappedResult & result)
+{
+  if (result.code == rclcpp_action::ResultCode::SUCCEEDED) {
+    motion_succeeded_ = true;
+    RCLCPP_INFO(this->get_logger(), "Motion execution completed");
+  } else if (result.code == rclcpp_action::ResultCode::ABORTED) {
+    RCLCPP_ERROR(this->get_logger(), "Motion execution failed");
+  } else if (result.code == rclcpp_action::ResultCode::CANCELED) {
+    RCLCPP_INFO(this->get_logger(), "Motion execution cancelled");
+  } else {
+    RCLCPP_FATAL(this->get_logger(), "Got unknown result code");
+  }
+  running_motion_ = false;
+}
+
+bool PlayMotion2Client::run_motion(
+  const std::string & motion_name,
+  const bool skip_planning,
+  const std::chrono::seconds & motion_timeout)
+{
+  auto goal_handle = send_goal(motion_name, skip_planning);
+  if (!goal_handle) {
     return false;
   }
+  motion_succeeded_ = false;
+  running_motion_ = true;
 
   auto execution_future = play_motion2_client_->async_get_result(goal_handle);
 
@@ -88,24 +124,44 @@ bool PlayMotion2Client::run_motion(
   {
     RCLCPP_ERROR(this->get_logger(), "Failed to execute PlayMotion2 goal");
     play_motion2_client_->async_cancel_goal(goal_handle);
+    running_motion_ = false;
     return false;
   }
 
-  switch (execution_future.get().code) {
-    case rclcpp_action::ResultCode::SUCCEEDED:
-      RCLCPP_INFO(this->get_logger(), "Motion execution completed");
-      return true;
-      break;
-    case rclcpp_action::ResultCode::ABORTED:
-      RCLCPP_INFO(this->get_logger(), "Motion execution failed");
-      break;
-    case rclcpp_action::ResultCode::CANCELED:
-      RCLCPP_INFO(this->get_logger(), "Motion execution cancelled");
-      break;
-    case rclcpp_action::ResultCode::UNKNOWN:
-      throw std::runtime_error("Got unknown result code");
+  // Wait for the result callback to set the motion_succeeded_ flag
+  while (running_motion_) {
+    std::this_thread::sleep_for(100ms);
   }
-  return false;
+
+  return motion_succeeded_;
+}
+
+bool PlayMotion2Client::run_motion_async(
+  const std::string & motion_name,
+  const bool skip_planning)
+{
+  const auto goal_handle = send_goal(motion_name, skip_planning);
+  if (!goal_handle) {
+    return false;
+  }
+
+  motion_succeeded_ = false;
+  running_motion_ = true;
+  return true;
+}
+
+bool PlayMotion2Client::is_running_motion() const
+{
+  return running_motion_;
+}
+
+bool PlayMotion2Client::last_succeeded() const
+{
+  if (running_motion_) {
+    RCLCPP_WARN(this->get_logger(), "Motion is still running.");
+  }
+
+  return motion_succeeded_;
 }
 
 std::vector<std::string> PlayMotion2Client::list_motions()

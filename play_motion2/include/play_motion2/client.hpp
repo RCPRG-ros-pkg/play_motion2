@@ -53,6 +53,13 @@ public:
     const bool skip_planning,
     const std::chrono::seconds & motion_timeout = std::chrono::seconds(120));
 
+  bool run_motion_async(
+    const std::string & motion_name,
+    const bool skip_planning);
+
+  bool is_running_motion() const;
+  bool last_succeeded() const;
+
   std::vector<std::string> list_motions();
   bool is_motion_ready(const std::string & motion_key);
   MotionInfo get_motion_info(const std::string & motion_key);
@@ -61,6 +68,15 @@ public:
   bool remove_motion(const std::string & motion_key);
 
 private:
+  const rclcpp_action::ClientGoalHandle<PlayMotion2>::SharedPtr
+  send_goal(const std::string & motion_name, const bool skip_planning);
+  void result_callback(
+    const rclcpp_action::ClientGoalHandle<PlayMotion2>::WrappedResult & result);
+
+private:
+  std::atomic_bool running_motion_;
+  bool motion_succeeded_;
+
   rclcpp_action::Client<PlayMotion2>::SharedPtr play_motion2_client_;
 
   rclcpp::Client<GetMotionInfo>::SharedPtr get_motion_info_client_;
