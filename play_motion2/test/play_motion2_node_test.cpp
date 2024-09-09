@@ -319,3 +319,96 @@ TEST_F(PlayMotion2NodeTest, GetMotionInfoSrvTest)
   ASSERT_TRUE(result->motion.description.empty());
   ASSERT_TRUE(result->motion.usage.empty());
 }
+
+TEST_F(PlayMotion2NodeTest, AddMotionSrvTest)
+{
+  auto add_motion_client =
+    client_node_->create_client<AddMotion>(
+    "play_motion2/add_motion");
+
+  ASSERT_TRUE(add_motion_client->wait_for_service(TIMEOUT));
+
+  auto request = std::make_shared<AddMotion::Request>();
+  request->motion.key = "new_motion";
+  request->motion.joints = {"joint1", "joint2"};
+  request->motion.positions = {0.5, 0.5};
+  request->motion.times_from_start = {0.1};
+
+  auto future_result = add_motion_client->async_send_request(request);
+
+  ASSERT_EQ(
+    rclcpp::spin_until_future_complete(
+      client_node_, future_result,
+      TIMEOUT), rclcpp::FutureReturnCode::SUCCESS);
+
+  const auto result = future_result.get();
+
+  ASSERT_TRUE(result->success);
+
+  // check that the new motion is available
+  auto list_motions_client =
+    client_node_->create_client<ListMotions>("play_motion2/list_motions");
+
+  ASSERT_TRUE(list_motions_client->wait_for_service(TIMEOUT));
+
+  auto list_motions_request = std::make_shared<ListMotions::Request>();
+  auto list_motions_future_result = list_motions_client->async_send_request(list_motions_request);
+
+  ASSERT_EQ(
+    rclcpp::spin_until_future_complete(
+      client_node_, list_motions_future_result,
+      TIMEOUT), rclcpp::FutureReturnCode::SUCCESS);
+
+  const auto list_motions_result = list_motions_future_result.get();
+
+  ASSERT_EQ(list_motions_result->motion_keys.size(), 4u);
+  ASSERT_EQ(list_motions_result->motion_keys[3], "new_motion");
+}
+
+TEST_F(PlayMotion2NodeTest, RemoveMotionSrvTest)
+{
+  const auto motion_to_rm = "home";
+
+  auto remove_motion_client =
+    client_node_->create_client<RemoveMotion>(
+    "play_motion2/remove_motion");
+
+  ASSERT_TRUE(remove_motion_client->wait_for_service(TIMEOUT));
+
+  auto request = std::make_shared<RemoveMotion::Request>();
+  request->motion_key = motion_to_rm;
+
+  auto future_result = remove_motion_client->async_send_request(request);
+
+  ASSERT_EQ(
+    rclcpp::spin_until_future_complete(
+      client_node_, future_result,
+      TIMEOUT), rclcpp::FutureReturnCode::SUCCESS);
+
+  const auto result = future_result.get();
+
+  ASSERT_TRUE(result->success);
+
+  // check that the new motion is not available
+  auto list_motions_client =
+    client_node_->create_client<ListMotions>("play_motion2/list_motions");
+
+  ASSERT_TRUE(list_motions_client->wait_for_service(TIMEOUT));
+
+  auto list_motions_request = std::make_shared<ListMotions::Request>();
+  auto list_motions_future_result = list_motions_client->async_send_request(list_motions_request);
+
+  ASSERT_EQ(
+    rclcpp::spin_until_future_complete(
+      client_node_, list_motions_future_result,
+      TIMEOUT), rclcpp::FutureReturnCode::SUCCESS);
+
+  const auto list_motions_result = list_motions_future_result.get();
+
+  ASSERT_EQ(list_motions_result->motion_keys.size(), 3u);
+  ASSERT_EQ(
+    std::find(
+      list_motions_result->motion_keys.begin(),
+      list_motions_result->motion_keys.end(),
+      motion_to_rm), list_motions_result->motion_keys.end());
+}
