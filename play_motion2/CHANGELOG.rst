@@ -2,6 +2,20 @@
 Changelog for package play_motion2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Remove error log from exists function
+* Check the motion exists for isMotionReady service
+* Add missing option to overwrite when adding motion
+* Add option to run motions asynchronously
+* Create service functions for the PlayMotion2Client
+* Add run_motion executable
+* Add simple client for PlayMotion2
+* Add new motion key only if is not overwritten
+* Create services to add and remove motions
+* Add service to get the info of a motion
+* Contributors: Noel Jimenez
+
 1.2.0 (2024-08-09)
 ------------------
 * Wait for robot description and semantic when using planning
