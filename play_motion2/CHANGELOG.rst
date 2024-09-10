@@ -2,8 +2,8 @@
 Changelog for package play_motion2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.3.0 (2024-09-10)
+------------------
 * Remove error log from exists function
 * Check the motion exists for isMotionReady service
 * Add missing option to overwrite when adding motion
