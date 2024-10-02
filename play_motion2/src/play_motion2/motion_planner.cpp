@@ -309,16 +309,16 @@ Result MotionPlanner::execute_motion(const MotionInfo & info, const bool skip_pl
   MoveGroupInterface::Plan approach_plan;
   for (const auto & group : move_groups) {
     approach_plan = plan_approach(group, info);
-    if (!approach_plan.trajectory_.joint_trajectory.points.empty()) {
+    if (!approach_plan.trajectory.joint_trajectory.points.empty()) {
       break;
     }
   }
 
-  if (approach_plan.trajectory_.joint_trajectory.points.empty()) {
+  if (approach_plan.trajectory.joint_trajectory.points.empty()) {
     return Result(Result::State::ERROR, "Failed to plan approach trajectory");
   }
 
-  return perform_motion(info, approach_plan.trajectory_.joint_trajectory);
+  return perform_motion(info, approach_plan.trajectory.joint_trajectory);
 }
 
 double MotionPlanner::calculate_approach_time(
